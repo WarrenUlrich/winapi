@@ -7,6 +7,8 @@ export module winapi.tlhelp32;
 
 import <utility>;
 import <iterator>;
+import <string_view>;
+import <stdexcept>;
 
 import winapi.handleapi;
 
