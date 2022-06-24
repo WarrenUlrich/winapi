@@ -2,10 +2,10 @@ module;
 
 #include <windows.h>
 
-export module winapi.processthreads;
+export module winapi.processthreadsapi;
 
 import winapi.handleapi;
-import winapi.errhandling;
+import winapi.errhandlingapi;
 
 export namespace winapi::process
 {
@@ -30,12 +30,12 @@ export namespace winapi::process
         vm_write = PROCESS_VM_WRITE,
     };
 
-    handle open_process(access access, bool inherit, DWORD pid)
+    safe_handle open_process(access access, bool inherit, DWORD pid)
     {
         auto h = OpenProcess((unsigned long)access, inherit, pid);
         if (h == INVALID_HANDLE_VALUE)
             throw get_last_error();
 
-        return handle(h);
+        return safe_handle(h);
     }
 }

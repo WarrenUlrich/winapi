@@ -2,7 +2,7 @@ module;
 
 #include <windows.h>
 
-export module winapi.errhandling;
+export module winapi.errhandlingapi;
 
 import <system_error>;
 

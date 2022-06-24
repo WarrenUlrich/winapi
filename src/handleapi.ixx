@@ -1,47 +1,64 @@
 module;
 
 #include <windows.h>
+#include <handleapi.h>
 
 export module winapi.handleapi;
 
-import winapi.errhandling;
+import winapi.errhandlingapi;
+import <iostream>;
 
 export namespace winapi
 {
-    export class handle
+    typedef HANDLE unsafe_handle_t;
+
+    export class safe_handle
     {
     public:
-        explicit handle(HANDLE h) noexcept : _handle(h) {}
+        constexpr safe_handle() : _handle(INVALID_HANDLE_VALUE) {}
 
-        explicit handle(const handle &h) noexcept
-        {
-            _handle = h._handle;
-        }
+        constexpr safe_handle(unsafe_handle_t h) noexcept : _handle(h) {}
 
-        explicit handle(handle &&hndl) noexcept
+        constexpr safe_handle(const safe_handle &) = delete;
+
+        constexpr safe_handle(safe_handle &&hndl) noexcept
         {
             _handle = hndl._handle;
             hndl._handle = INVALID_HANDLE_VALUE;
         }
 
-        HANDLE get_raw_handle() const noexcept
+        safe_handle &operator=(const safe_handle &) = delete;
+
+        safe_handle &operator=(safe_handle &&h)
+        {
+            _handle = h._handle;
+            h._handle = INVALID_HANDLE_VALUE;
+            return *this;
+        }
+
+        unsafe_handle_t get_unsafe_handle() const noexcept
         {
             return _handle;
         }
 
+        bool valid() const noexcept
+        {
+            return _handle != INVALID_HANDLE_VALUE;
+        }
+
         void close()
         {
-            if (_handle != INVALID_HANDLE_VALUE)
+            if (valid())
                 if (CloseHandle(_handle) != 0)
                     throw get_last_error();
         }
 
-        ~handle()
+        ~safe_handle()
         {
             close();
         }
 
     private:
-        HANDLE _handle;
+        unsafe_handle_t _handle;
     };
 }
