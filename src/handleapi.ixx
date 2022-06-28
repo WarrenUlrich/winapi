@@ -5,59 +5,73 @@ module;
 
 export module winapi.handleapi;
 
+import <utility>;
+
 import winapi.errhandlingapi;
 
 export namespace winapi
 {
     typedef HANDLE unsafe_handle_t;
 
-    export class safe_handle
+    export class handle
     {
     public:
-        safe_handle() : _handle(INVALID_HANDLE_VALUE) {}
+        handle() : _handle(INVALID_HANDLE_VALUE) {}
 
-        safe_handle(unsafe_handle_t h) noexcept : _handle(h) {}
+        handle(unsafe_handle_t handle) : _handle(handle) {}
 
-        safe_handle(const safe_handle &) = delete;
+        handle(const handle &other) : _handle(other._handle) {}
 
-        safe_handle(safe_handle &&hndl) noexcept
+        handle(handle &&other) : _handle(other._handle) { other._handle = INVALID_HANDLE_VALUE; }
+
+        handle &operator=(const handle &h)
         {
-            _handle = hndl._handle;
-            hndl._handle = INVALID_HANDLE_VALUE;
+            _handle = h._handle;
+            return *this;
         }
 
-        safe_handle &operator=(const safe_handle &) = delete;
-
-        safe_handle &operator=(safe_handle &&h)
+        handle &operator=(handle &&h)
         {
             _handle = h._handle;
             h._handle = INVALID_HANDLE_VALUE;
             return *this;
         }
 
-        unsafe_handle_t get_unsafe_handle() const noexcept
-        {
-            return _handle;
-        }
+        unsafe_handle_t get_unsafe_handle() const { return _handle; }
 
-        bool valid() const noexcept
-        {
-            return _handle != INVALID_HANDLE_VALUE;
-        }
+        operator bool() const { return _handle != INVALID_HANDLE_VALUE; }
 
-        void close()
-        {
-            if (valid())
-                if (CloseHandle(_handle) == 0)
-                    throw get_last_error();
-        }
+        virtual ~handle() = default;
 
-        virtual ~safe_handle()
-        {
-            close();
-        }
-
-    protected:
+    private:
         unsafe_handle_t _handle;
+    };
+
+    export class safe_handle : public handle
+    {
+    public:
+        safe_handle() : handle() {}
+
+        safe_handle(unsafe_handle_t handle) : handle(handle) {}
+
+        safe_handle(const safe_handle &other) = delete;
+
+        safe_handle(safe_handle &&other) : handle(std::move(other)) {}
+
+        safe_handle &operator=(const safe_handle &h) = delete;
+
+        safe_handle &operator=(safe_handle &&h)
+        {
+            handle::operator=(std::move(h));
+            return *this;
+        }
+
+        operator bool() const { return handle::operator bool(); }
+
+        ~safe_handle() override
+        {
+            if (*this)
+                CloseHandle(get_unsafe_handle());
+        }
     };
 }

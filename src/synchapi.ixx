@@ -6,6 +6,7 @@ module;
 export module winapi.synchapi;
 
 import <cstdint>;
+import <chrono>;
 
 import winapi.handleapi;
 import winapi.errhandlingapi;
@@ -20,9 +21,10 @@ export namespace winapi::sync
         failed = WAIT_FAILED,
     };
 
-    wait_result wait_for_single_object(const safe_handle &handle, std::uint32_t milliseconds)
+    template <typename Rep, typename Period>
+    wait_result wait_for_single_object(const safe_handle &handle, std::chrono::duration<Rep, Period> duration)
     {
-        auto result = WaitForSingleObject(handle.get_unsafe_handle(), milliseconds);
+        auto result = WaitForSingleObject(handle.get_unsafe_handle(), std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
         if (result == WAIT_FAILED)
             throw get_last_error();
 
