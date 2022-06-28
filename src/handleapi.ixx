@@ -6,7 +6,6 @@ module;
 export module winapi.handleapi;
 
 import winapi.errhandlingapi;
-import <iostream>;
 
 export namespace winapi
 {
@@ -15,13 +14,13 @@ export namespace winapi
     export class safe_handle
     {
     public:
-        constexpr safe_handle() : _handle(INVALID_HANDLE_VALUE) {}
+        safe_handle() : _handle(INVALID_HANDLE_VALUE) {}
 
-        constexpr safe_handle(unsafe_handle_t h) noexcept : _handle(h) {}
+        safe_handle(unsafe_handle_t h) noexcept : _handle(h) {}
 
-        constexpr safe_handle(const safe_handle &) = delete;
+        safe_handle(const safe_handle &) = delete;
 
-        constexpr safe_handle(safe_handle &&hndl) noexcept
+        safe_handle(safe_handle &&hndl) noexcept
         {
             _handle = hndl._handle;
             hndl._handle = INVALID_HANDLE_VALUE;
@@ -49,16 +48,16 @@ export namespace winapi
         void close()
         {
             if (valid())
-                if (CloseHandle(_handle) != 0)
+                if (CloseHandle(_handle) == 0)
                     throw get_last_error();
         }
 
-        ~safe_handle()
+        virtual ~safe_handle()
         {
             close();
         }
 
-    private:
+    protected:
         unsafe_handle_t _handle;
     };
 }

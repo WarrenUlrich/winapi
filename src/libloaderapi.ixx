@@ -11,31 +11,60 @@ import winapi.errhandlingapi;
 
 export namespace winapi::lib
 {
-    safe_handle load_library(std::string_view file_name)
+    class module_handle : public safe_handle
+    {
+    public:
+        module_handle(unsafe_handle_t h) noexcept : safe_handle(h) {}
+
+        module_handle(const module_handle &) = delete;
+
+        module_handle(module_handle &&hndl) noexcept : safe_handle(std::move(hndl)) {}
+
+        module_handle &operator=(const module_handle &) = delete;
+
+        module_handle &operator=(module_handle &&h)
+        {
+            safe_handle::operator=(std::move(h));
+            return *this;
+        }
+
+        template <typename T = void>
+        T *get_proc_address(std::string_view proc_name)
+        {
+            auto proc = GetProcAddress((HMODULE)_handle, proc_name.data());
+            if (proc == nullptr)
+                throw get_last_error();
+
+            return reinterpret_cast<T *>(proc);
+        }
+
+        ~module_handle() override {}
+    };
+
+    module_handle load_library(std::string_view file_name)
     {
         auto h = LoadLibraryA(file_name.data());
-        if (h == INVALID_HANDLE_VALUE)
+        if (h == nullptr)
             throw get_last_error();
 
-        return safe_handle(h);
+        return module_handle(h);
     }
 
-    safe_handle load_library(std::wstring_view file_name)
+    module_handle load_library(std::wstring_view file_name)
     {
         auto h = LoadLibraryW(file_name.data());
-        if (h == INVALID_HANDLE_VALUE)
+        if (h == nullptr)
             throw get_last_error();
 
-        return safe_handle(h);
+        return module_handle(h);
     }
 
-    template<typename T>
-    T* get_proc_address(const safe_handle& lib, std::string_view proc_name)
+    module_handle get_module_handle(std::string_view module_name)
     {
-        auto proc = GetProcAddress((HMODULE)lib.get_unsafe_handle(), proc_name.data());
-        if (proc == nullptr)
+        auto h = GetModuleHandleA(module_name.data());
+        if (h == nullptr)
             throw get_last_error();
-        
-        return (T*)proc;
+
+        return module_handle(h);
     }
 }

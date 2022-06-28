@@ -1,9 +1,6 @@
-# CMakeList.txt : Top-level CMake project file, do global configuration
-# and include sub-projects here.
-#
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.8)
 
-project ("winapi")
+project("winapi")
 
 file(GLOB_RECURSE WINAPI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.ixx)
 

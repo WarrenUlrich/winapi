@@ -4,12 +4,14 @@ module;
 
 export module winapi.processthreadsapi;
 
+import <cstdint>;
+
 import winapi.handleapi;
 import winapi.errhandlingapi;
 
 export namespace winapi::process
 {
-    enum class access
+    enum class access : std::uint32_t
     {
         del = DELETE,
         read_control = READ_CONTROL,
@@ -33,6 +35,28 @@ export namespace winapi::process
     safe_handle open_process(access access, bool inherit, DWORD pid)
     {
         auto h = OpenProcess((unsigned long)access, inherit, pid);
+        if (h == INVALID_HANDLE_VALUE)
+            throw get_last_error();
+
+        return safe_handle(h);
+    }
+
+    safe_handle create_remote_thread(const safe_handle &proc_handle,
+                                     void *security_attr,
+                                     std::size_t stack_size,
+                                     auto *start_routine,
+                                     auto *param,
+                                     DWORD create_flags,
+                                     std::uint32_t *thread_id)
+    {
+        auto h = CreateRemoteThread(proc_handle.get_unsafe_handle(),
+                                    static_cast<LPSECURITY_ATTRIBUTES>(security_attr),
+                                    static_cast<SIZE_T>(stack_size),
+                                    static_cast<LPTHREAD_START_ROUTINE>(start_routine),
+                                    static_cast<LPVOID>(param),
+                                    static_cast<DWORD>(create_flags),
+                                    reinterpret_cast<LPDWORD>(&thread_id));
+
         if (h == INVALID_HANDLE_VALUE)
             throw get_last_error();
 
